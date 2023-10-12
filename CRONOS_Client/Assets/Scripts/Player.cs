@@ -10,8 +10,11 @@ public struct DataPlayer
     public string name;
     public Peer peer;
     public Vector2 position;
-    public bool switchedMousePos;
     public Vector2 mousePos;
+    public float rotation;
+    public float speed;
+    public bool switchedMousePos;
+
 }
 
 public class Player : MonoBehaviour
@@ -19,7 +22,7 @@ public class Player : MonoBehaviour
     public TMP_Text nameText;
     public LayerMask layerToHit;
     public GameObject playerCamera;
-    public GameObject playerCapsule;
+    public GameObject playerVisu;
     public GameObject playerMarkerDestination;
     public GameObject pauseMenuPrefabs;
     public bool onPauseMenu = false;
@@ -40,15 +43,7 @@ public class Player : MonoBehaviour
     private void Update()
     {
         //Direction du regard du player vers son prochain deplacement
-        if (this.transform.position != new Vector3(data.position.x, 0, data.position.y))
-        {
-            Vector3 direction = new Vector3(data.position.x, 0, data.position.y) - transform.position;
-            direction /= direction.magnitude;
-
-            Quaternion rotation = Quaternion.LookRotation(direction, Vector3.up);
-            playerCapsule.transform.rotation = rotation;
-        }
-        
+        playerVisu.transform.eulerAngles = new Vector3(0, data.rotation, 0);
 
         //Mise à jours de la pos du player
         this.transform.position = new Vector3(data.position.x, 0, data.position.y);
@@ -113,6 +108,16 @@ public class Player : MonoBehaviour
     public void SetPos(Vector2 newPos)
     {
         this.data.position = newPos;
+    }
+
+    public void SetRotation(float rotation)
+    {
+        this.data.rotation = rotation;
+    }
+
+    public void SetSpeed(float speed)
+    {
+        this.data.speed = speed;
     }
 
     public void SetActiveCamera(bool active)

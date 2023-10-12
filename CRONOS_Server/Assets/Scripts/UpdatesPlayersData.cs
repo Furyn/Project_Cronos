@@ -35,14 +35,7 @@ public class UpdatesPlayersData : MonoBehaviour
 
                     players.Add(playerGo);
                 }
-                //ELSE PLAYER IS IN THE LISTE SO WE UPDATE INFO
-                else
-                {
-                    Player player = players.Find(x => x.GetId() == dataPlayer.id);
-                    player.SetPos(dataPlayer.position);
-                }
             }
-
 
             //If player is not in the network list of player so it's a player to delete
             foreach (Player player in players)
@@ -63,7 +56,6 @@ public class UpdatesPlayersData : MonoBehaviour
 
             _tempPlayers.Clear();
             _playerToDelete.Clear();
-
         }
     }
 }

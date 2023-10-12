@@ -92,10 +92,6 @@ public class NetworkCore_S : MonoBehaviour
 
     private void GameTick(float elapsedTime)
     {
-        foreach (DataPlayer player in serverData.players)
-        {
-            player.UpdatePhysics(elapsedTime);
-        }
 
     }
 
@@ -181,10 +177,8 @@ public class NetworkCore_S : MonoBehaviour
                     playerConnexion.Unserialize(ref dataPacket, offset);
 
                     DataPlayer findPlayer = serverData.players.Find(x => x.peer.ID == evt.Peer.ID);
-                    serverData.players.Remove(findPlayer);
                     findPlayer.name = playerConnexion.name;
                     findPlayer.id = playerConnexion.id;
-                    serverData.players.Add(findPlayer);
 
                     Debug.Log(findPlayer.name + " connected");
 
@@ -197,10 +191,11 @@ public class NetworkCore_S : MonoBehaviour
                     playerMousePos.Unserialize(ref dataPacket, offset);
 
                     DataPlayer findPlayer = serverData.players.Find(x => x.peer.ID == evt.Peer.ID);
-                    serverData.players.Remove(findPlayer);
+                    if (findPlayer.mousePos != playerMousePos.mousePos)
+                        findPlayer.switchedMousePos = true;
+
                     findPlayer.mousePos.x = playerMousePos.mousePos.x;
                     findPlayer.mousePos.y = playerMousePos.mousePos.y;
-                    serverData.players.Add(findPlayer);
                     break;
                 }
             default:

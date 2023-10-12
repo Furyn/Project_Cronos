@@ -2,6 +2,7 @@ using ENet;
 using System;
 using TMPro;
 using UnityEngine;
+using UnityEngine.AI;
 
 [Serializable]
 public class DataPlayer
@@ -11,7 +12,7 @@ public class DataPlayer
     public Peer peer;
     public Vector2 position = Vector2.zero;
     public Vector2 mousePos = Vector2.zero;
-    public Vector2 direction = Vector2.zero;
+    public float rotation = 0f;
     public bool switchedMousePos = false;
     public float speed = 10f;
 
@@ -23,18 +24,6 @@ public class DataPlayer
     {
         this.peer = peer;
     }
-
-    public void UpdatePhysics(float elapsedTime)
-    {
-        if (position != mousePos)
-        {
-            direction = (mousePos - position).normalized;
-            if (Vector2.Distance(mousePos, position) <= 0.2f)
-                position = mousePos;
-            else
-                position += direction * speed * elapsedTime;
-        }
-    }
 }
 
 public class Player : MonoBehaviour
@@ -42,20 +31,18 @@ public class Player : MonoBehaviour
     public TMP_Text nameText;
     public GameObject playerCapsule;
     public DataPlayer data;
+    public NavMeshAgent agent;
 
     private void Update()
     {
-        //Direction du regard du player vers son prochain deplacement
-        if (this.transform.position != new Vector3(data.position.x, 0, data.position.y))
+        if (data.switchedMousePos)
         {
-            Vector3 direction = new Vector3(data.position.x, 0, data.position.y) - transform.position;
-            direction /= direction.magnitude;
-
-            Quaternion rotation = Quaternion.LookRotation(direction, Vector3.up);
-            playerCapsule.transform.rotation = rotation;
+            data.switchedMousePos = false;
+            agent.SetDestination(new Vector3(data.mousePos.x,0,data.mousePos.y));
         }
-
-        this.transform.position = new Vector3(data.position.x, 0, data.position.y);
+        data.position = new Vector2(transform.position.x, transform.position.z);
+        data.rotation = transform.eulerAngles.y;
+        data.speed = agent.velocity.magnitude;
     }
 
     public int GetId()
@@ -72,11 +59,6 @@ public class Player : MonoBehaviour
     {
         this.data = data;
         nameText.text = data.name;
-    }
-
-    public void SetPos(Vector2 newPos)
-    {
-        this.data.position = newPos;
     }
 
 }

@@ -466,6 +466,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6799314970438632202}
   - component: {fileID: 3984396362585242664}
+  - component: {fileID: 5919954022454576422}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -507,12 +508,35 @@ MonoBehaviour:
   playerCapsule: {fileID: 6799314969869302677}
   data:
     id: 0
-    name: TESTE
+    name: 
     position: {x: 0, y: 0}
     mousePos: {x: 0, y: 0}
     direction: {x: 0, y: 0}
     switchedMousePos: 0
     speed: 10
+  agent: {fileID: 5919954022454576422}
+--- !u!195 &5919954022454576422
+NavMeshAgent:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6799314970438632201}
+  m_Enabled: 1
+  m_AgentTypeID: 0
+  m_Radius: 0.5
+  m_Speed: 5
+  m_Acceleration: 8
+  avoidancePriority: 50
+  m_AngularSpeed: 120
+  m_StoppingDistance: 0
+  m_AutoTraverseOffMeshLink: 1
+  m_AutoBraking: 1
+  m_AutoRepath: 1
+  m_Height: 2
+  m_BaseOffset: 0
+  m_WalkableMask: 4294967295
+  m_ObstacleAvoidanceType: 4
 --- !u!1 &8056598944525346997
 GameObject:
   m_ObjectHideFlags: 0

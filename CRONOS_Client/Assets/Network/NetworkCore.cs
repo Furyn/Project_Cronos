@@ -177,6 +177,8 @@ public class NetworkCore : MonoBehaviour
 
                         allPlayers.Remove(player);
                         player.position = dataPlayer.position;
+                        player.rotation = dataPlayer.rotation;
+                        player.speed = dataPlayer.speed;
                         allPlayers.Add(player);
 
                         if (currentPlayer.id == dataPlayer.id)

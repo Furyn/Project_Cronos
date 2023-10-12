@@ -46,6 +46,8 @@ public class UpdatesPlayersData : MonoBehaviour
                 {
                     Player player = players.Find(x => x.GetId() == dataPlayer.id);
                     player.SetPos(dataPlayer.position);
+                    player.SetRotation(dataPlayer.rotation);
+                    player.SetSpeed(dataPlayer.speed);
                 }
             }
 

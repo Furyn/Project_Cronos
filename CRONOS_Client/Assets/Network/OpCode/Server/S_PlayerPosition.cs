@@ -20,6 +20,8 @@ public class S_PlayerPosition : GeneriqueOpCode
             NetworkCore.Serialize_i32(ref byteArray, player.id);
             NetworkCore.Serialize_float(ref byteArray, player.position.x);
             NetworkCore.Serialize_float(ref byteArray, player.position.y);
+            NetworkCore.Serialize_float(ref byteArray, player.rotation);
+            NetworkCore.Serialize_float(ref byteArray, player.speed);
         }
     }
 
@@ -33,6 +35,8 @@ public class S_PlayerPosition : GeneriqueOpCode
             players[i].id = NetworkCore.Unserialize_i32(ref byteArray, ref offset);
             players[i].position.x = NetworkCore.Unserialize_float(ref byteArray, ref offset);
             players[i].position.y = NetworkCore.Unserialize_float(ref byteArray, ref offset);
+            players[i].rotation = NetworkCore.Unserialize_float(ref byteArray, ref offset);
+            players[i].speed = NetworkCore.Unserialize_float(ref byteArray, ref offset);
         }
     }
 }
