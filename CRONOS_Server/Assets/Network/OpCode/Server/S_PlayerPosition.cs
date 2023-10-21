@@ -5,11 +5,12 @@ using UnityEngine;
 public class S_PlayerPosition : GeneriqueOpCode
 {
     public DataPlayer[] players;
+    public int tickIndex;
 
-    public S_PlayerPosition(List<DataPlayer> serverPlayers)
+    public S_PlayerPosition(List<DataPlayer> serverPlayers, int networkTickIndex)
     {
         opCode = EnetOpCode.OpCode.S_PlayersPosition;
-
+        tickIndex = networkTickIndex;
         players = new DataPlayer[serverPlayers.Count];
         for (int i = 0; i < serverPlayers.Count; i++)
         {
@@ -29,6 +30,7 @@ public class S_PlayerPosition : GeneriqueOpCode
 
     public override void Serialize(ref byte[] byteArray)
     {
+        NetworkCore_S.Serialize_i32(ref byteArray, tickIndex);
         NetworkCore_S.Serialize_i32(ref byteArray, players.Length);
 
         foreach (DataPlayer player in players)
@@ -43,6 +45,7 @@ public class S_PlayerPosition : GeneriqueOpCode
 
     public override void Unserialize(ref byte[] byteArray, int offset)
     {
+        tickIndex = NetworkCore_S.Unserialize_i32(ref byteArray, ref offset);
         int nb_player = NetworkCore_S.Unserialize_i32(ref byteArray, ref offset);
         players = new DataPlayer[nb_player];
 

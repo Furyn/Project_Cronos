@@ -29,6 +29,7 @@ public class S_PlayerList : GeneriqueOpCode
 
         for (int i = 0; i < players.Length; i++)
         {
+            players[i] = new DataPlayer();
             players[i].id = NetworkCore.Unserialize_i32(ref byteArray, ref offset);
             players[i].name = NetworkCore.Unserialize_str(ref byteArray, ref offset);
         }

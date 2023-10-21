@@ -11,7 +11,7 @@ namespace EnetOpCode
     }
 }
 
-
+[System.Serializable]
 public abstract class GeneriqueOpCode
 {
     public EnetOpCode.OpCode opCode;

@@ -11,18 +11,30 @@ public class NetworkCore : MonoBehaviour
 {
     public static NetworkCore instance;
 
-    [Header("Network")]
+    [HideInInspector]
     public bool isConnected = false;
+    [HideInInspector]
     public bool attemptToConnect = false;
-    
+
+    [Header("Data")]
     public DataPlayer currentPlayer;
     public List<DataPlayer> allPlayers;
+    [HideInInspector]
     public bool allPlayersUpdated = false;
     private ENet.Host m_enetHost = new ENet.Host();
 
+    [Header("Network")]
+
+    public float now = 0f;
     public float nextGameTick = 0f;
     public float gameTickInterval = 1.0f / 10.0f;
-    public float now = 0f;
+    public float networkTickInterval = 1.0f / 10.0f;
+
+    [Header("Interpolation buffer")]
+    public float interpolationTime = 0f;
+    public int targetInterpolationBufferSize = 5;
+    [SerializeField]
+    private List<S_PlayerPosition> interpolationBuffer = new List<S_PlayerPosition>();
 
     public bool Connect(string addressString)
     {
@@ -32,7 +44,7 @@ public class NetworkCore : MonoBehaviour
 
         address.Port = 14768;
 
-        if(!m_enetHost.IsSet)
+        if (!m_enetHost.IsSet)
             m_enetHost.Create(1, 0);
         currentPlayer.peer = m_enetHost.Connect(address, 0);
         attemptToConnect = true;
@@ -41,9 +53,9 @@ public class NetworkCore : MonoBehaviour
 
     public void Disconnect()
     {
-        if(currentPlayer.peer.IsSet)
+        if (currentPlayer.peer.IsSet)
             currentPlayer.peer.Disconnect(0);
-        if(m_enetHost.IsSet)
+        if (m_enetHost.IsSet)
             m_enetHost.Flush();
     }
 
@@ -79,13 +91,15 @@ public class NetworkCore : MonoBehaviour
     private void Update()
     {
         now += Time.deltaTime;
-        
+
         if (now >= nextGameTick)
         {
             GameTick(now - nextGameTick);
 
             nextGameTick += gameTickInterval;
         }
+
+        InterpolatePosition();
     }
 
     private void GameTick(float elapsedTime)
@@ -94,7 +108,8 @@ public class NetworkCore : MonoBehaviour
             return;
 
         //Envoie de la pose de la souris au serveur du joueur
-        if (currentPlayer.switchedMousePos) {
+        if (currentPlayer.switchedMousePos)
+        {
             currentPlayer.switchedMousePos = false;
             GeneriqueOpCode packet_to_send = new C_PlayerMousePos(currentPlayer.id, currentPlayer.mousePos);
             Packet packet = build_packet(ref packet_to_send, PacketFlags.None);
@@ -126,7 +141,7 @@ public class NetworkCore : MonoBehaviour
                         attemptToConnect = false;
 
                         //Init player to server with id and name
-                        GeneriqueOpCode packet_to_send = new C_PlayerConnexion(currentPlayer.id ,currentPlayer.name);
+                        GeneriqueOpCode packet_to_send = new C_PlayerConnexion(currentPlayer.id, currentPlayer.name);
                         Packet packet = build_packet(ref packet_to_send, PacketFlags.Reliable);
                         currentPlayer.peer.Send(0, ref packet);
                         packet.Dispose();
@@ -171,22 +186,22 @@ public class NetworkCore : MonoBehaviour
                     S_PlayerPosition playersPosition = new S_PlayerPosition();
                     playersPosition.Unserialize(ref dataPacket, offset);
 
-                    foreach (DataPlayer dataPlayer in playersPosition.players)
+                    if (interpolationBuffer.Count == 0)
                     {
-                        DataPlayer player = allPlayers.Find(x => x.id == dataPlayer.id);
-
-                        allPlayers.Remove(player);
-                        player.position = dataPlayer.position;
-                        player.rotation = dataPlayer.rotation;
-                        player.speed = dataPlayer.speed;
-                        allPlayers.Add(player);
-
-                        if (currentPlayer.id == dataPlayer.id)
+                        // Position queue vide ? (soit début de game, soit grosse perte de paquet)
+                        // On initialise notre position queue avec le même paquet plusieurs fois
+                        int tickIndex = playersPosition.tickIndex;
+                        for (int i = 0; i < targetInterpolationBufferSize; ++i)
                         {
-                            currentPlayer.position = player.position;
+                            S_PlayerPosition copiePlayersPosition = new S_PlayerPosition();
+                            copiePlayersPosition.players = playersPosition.players;
+                            // Correction du tick index
+                            copiePlayersPosition.tickIndex = (tickIndex - (targetInterpolationBufferSize - i - 1));
+                            interpolationBuffer.Add(copiePlayersPosition);
                         }
                     }
-                    allPlayersUpdated = true;
+                    else
+                        interpolationBuffer.Add(playersPosition);
                     break;
                 }
             case EnetOpCode.OpCode.S_PlayerList:
@@ -194,10 +209,11 @@ public class NetworkCore : MonoBehaviour
                     S_PlayerList playerList = new S_PlayerList();
                     playerList.Unserialize(ref dataPacket, offset);
 
-                    allPlayers.Clear();
                     foreach (DataPlayer player in playerList.players)
                     {
-                        allPlayers.Add(player);
+                        bool hasPlayer = allPlayers.Any(x => x.id == player.id);
+                        if (!hasPlayer)
+                            allPlayers.Add(player);
                     }
                     allPlayersUpdated = true;
                     break;
@@ -208,9 +224,63 @@ public class NetworkCore : MonoBehaviour
 
     }
 
-    public static String DisplayBinary(Byte[] data)
+    void InterpolatePosition()
     {
-        return string.Join(" ", data.Select(byt => Convert.ToString(byt, 2).PadLeft(8, '0')));
+        if (interpolationBuffer.Count < 2)
+            return;
+
+        S_PlayerPosition from = interpolationBuffer[0];
+        S_PlayerPosition to = interpolationBuffer[1];
+
+        int currentTick = from.tickIndex;
+        int packetDiff = to.tickIndex - from.tickIndex;
+
+        float interpolationIncr = Time.deltaTime / networkTickInterval;
+        interpolationIncr /= packetDiff;
+
+        // Si on accumule trop de positions, on accélère légèrement le facteur d'interpolation
+        if (interpolationBuffer.Count >= targetInterpolationBufferSize)
+            interpolationIncr *= 1f + 0.2f * (interpolationBuffer.Count - targetInterpolationBufferSize);
+        else
+        {
+            float temp = 1f - 0.2f * (targetInterpolationBufferSize - interpolationBuffer.Count);
+            if (temp > 0)
+                interpolationIncr *= temp;
+            else
+                interpolationIncr *= 0;
+        }
+
+        foreach (DataPlayer fromPlayer in from.players)
+        {
+            bool hasPlayer = allPlayers.Any(x => x.id == fromPlayer.id);
+            if (!hasPlayer)
+                continue;
+            DataPlayer player = allPlayers.Find(x => x.id == fromPlayer.id);
+
+            hasPlayer = to.players.Any(x => x.id == fromPlayer.id);
+            if (!hasPlayer)
+                continue; // Le joueur n'existe plus dans le snapshot de destination, on y touche pas
+
+            DataPlayer toPlayer = to.players.ToList().Find(x => x.id == fromPlayer.id);
+
+            player.position = Vector2.Lerp(fromPlayer.position, toPlayer.position, interpolationTime);
+            player.rotation = Mathf.Lerp(fromPlayer.rotation, toPlayer.rotation, interpolationTime);
+            player.speed = Mathf.Lerp(fromPlayer.speed, toPlayer.speed, interpolationTime);
+
+            if (player.id == currentPlayer.id)
+            {
+                currentPlayer.position = player.position;
+                currentPlayer.rotation = player.rotation;
+                currentPlayer.speed = player.speed;
+            }
+        }
+
+        interpolationTime += interpolationIncr;
+        if (interpolationTime >= 1f)
+        {
+            interpolationBuffer.RemoveAt(0);
+            interpolationTime -= 1f;
+        }
     }
 
     #region Int Serialisation

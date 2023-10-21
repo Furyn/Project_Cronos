@@ -24,11 +24,12 @@ public class NetworkCore_S : MonoBehaviour
     [Header("Network")]
     public int maxClients = 10;
 
+    public float now = 0f;
     public float nextGameTick = 0f;
     public float gameTickInterval = 1.0f / 30.0f;
     public float nextNetworkTick = 0f;
     public float networkTickInterval = 1.0f / 10.0f;
-    public float now = 0f;
+    public int networkTickIndex = 0;
 
     [Header("Rendu")]
     public bool UpdateAllPlayers = false;
@@ -97,8 +98,10 @@ public class NetworkCore_S : MonoBehaviour
 
     private void network_tick(float elapsedTime)
     {
+        networkTickIndex++;
+
         // On envoie la position de tous les joueurs à chaque tick réseaux
-        GeneriqueOpCode packet_to_send = new S_PlayerPosition(serverData.players);
+        GeneriqueOpCode packet_to_send = new S_PlayerPosition(serverData.players, networkTickIndex);
         foreach (DataPlayer player in serverData.players)
         {
             Packet packet = build_packet(ref packet_to_send, PacketFlags.None);

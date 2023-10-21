@@ -41,14 +41,6 @@ public class UpdatesPlayersData : MonoBehaviour
 
                     players.Add(playerGo);
                 }
-                //ELSE PLAYER IS IN THE LISTE SO WE UPDATE INFO
-                else
-                {
-                    Player player = players.Find(x => x.GetId() == dataPlayer.id);
-                    player.SetPos(dataPlayer.position);
-                    player.SetRotation(dataPlayer.rotation);
-                    player.SetSpeed(dataPlayer.speed);
-                }
             }
 
             

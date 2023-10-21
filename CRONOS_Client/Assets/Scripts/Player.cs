@@ -1,10 +1,18 @@
 using ENet;
 using System;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 
 [Serializable]
-public struct DataPlayer
+public struct PlayerTransform
+{
+    public Vector2 position;
+    public float rotation;
+}
+
+[Serializable]
+public class DataPlayer
 {
     public int id;
     public string name;
@@ -14,7 +22,6 @@ public struct DataPlayer
     public float rotation;
     public float speed;
     public bool switchedMousePos;
-
 }
 
 public class Player : MonoBehaviour
@@ -30,18 +37,20 @@ public class Player : MonoBehaviour
     public bool isCurrentPlayer = false;
 
     [SerializeField]
-    private DataPlayer data = new DataPlayer();
+    private DataPlayer data;
     private Vector3 screenPos;
     private Camera cam;
 
     private void Awake()
     {
         cam = playerCamera.GetComponent<Camera>();
-        data.switchedMousePos = false;
     }
 
     private void Update()
     {
+        if (data == null)
+            return;
+
         //Direction du regard du player vers son prochain deplacement
         playerVisu.transform.eulerAngles = new Vector3(0, data.rotation, 0);
 
@@ -103,21 +112,6 @@ public class Player : MonoBehaviour
     {
         this.data = data;
         nameText.text = data.name;
-    }
-
-    public void SetPos(Vector2 newPos)
-    {
-        this.data.position = newPos;
-    }
-
-    public void SetRotation(float rotation)
-    {
-        this.data.rotation = rotation;
-    }
-
-    public void SetSpeed(float speed)
-    {
-        this.data.speed = speed;
     }
 
     public void SetActiveCamera(bool active)
